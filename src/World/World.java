@@ -15,7 +15,11 @@ public class World {
 	private int size;
 	private HashMap<String, HashMap<Integer, Vector<Integer>>> tileDeltas;
 	private HashMap<String, Player> players;
-	private HashMap<Integer, Vector<Integer>> tethers;
+	//private HashMap<Integer, Vector<Integer>> tethers;
+	private ArrayList<TetherLine> tethers;
+	//0: nothing
+	//1: oxygen flowing
+	//2: oxygen and power flowing
 	private HashMap<Integer, Resource> resourceTypes;
 	private ArrayList<Building> buildings;
 	private BuildingFactory buildingFactory;
@@ -53,7 +57,8 @@ public class World {
 		this.network = new BaseNetwork();
 		this.resources = resources;
 		this.tiles = tiles;
-		this.tethers = new HashMap<Integer, Vector<Integer>>();
+		//this.tethers = new HashMap<Integer, Vector<Integer>>();
+		this.tethers = new ArrayList<TetherLine>();
 		this.resourceTypes = new HashMap<Integer, Resource>();
 		this.buildings = new ArrayList<Building>();
 		this.size = tiles.length;
@@ -68,6 +73,54 @@ public class World {
 			}
 		}
 		
+	}
+	
+	public Tether nearestTether(int x, int y) {
+		double minDist = -1;
+		Tether retVal = null;
+		for(TetherLine line: this.tethers) {
+			for(Tether t: line.getTethers()) {
+				int dx = Math.abs(x - t.getX());
+				int dy = Math.abs(y - t.getY());
+				double dist = Math.sqrt(dx*dx + dy*dy);
+				if((dist < minDist || minDist == -1) && dist < Tether.MAX_DIST) {
+					minDist = dist;
+					retVal = t;
+				}
+			}
+		}
+		
+		return retVal;
+	}
+	
+	public void update() {
+		for(TetherLine line: this.tethers) {
+			line.updateState();
+			//System.out.println("X: " + line.getConnectedX());
+			//System.out.println("Y: " + line.getConnectedY());
+			//System.out.println("State: " + line.getState());
+		}
+	}
+	
+	public void addTether(int x, int y) {
+		//System.out.println(this.tethers.size());
+		Tether t = new Tether(x, y);
+		ArrayList<TetherLine> lines = new ArrayList<TetherLine>();
+		for(TetherLine line: this.tethers) {
+			if(line.addTether(t)) lines.add(line);
+		}
+		if(lines.size() == 0) {
+			TetherLine line = new TetherLine(this.network);
+			line.addTether(t);
+			this.tethers.add(line); 
+		} else if(lines.size() > 1){
+			TetherLine next = new TetherLine(this.network);
+			for(TetherLine line: lines) {
+				this.tethers.remove(line);
+				next.addLine(line);
+			}
+			this.tethers.add(next);
+		}
 	}
 	
 	public void connectBuilding(int x, int y) {
@@ -85,6 +138,13 @@ public class World {
 				this.connectIndex ++;
 			}
 		}
+		for(TetherLine line: this.tethers) {
+			line.updateLinked();
+		}
+	}
+	
+	public ArrayList<TetherLine> getTethers() {
+		return this.tethers;
 	}
 	
 	public int[] getBuildingIDs() {
@@ -112,7 +172,7 @@ public class World {
 		this.players.put(ID, player);
 		this.tileDeltas.put(ID, new HashMap<Integer, Vector<Integer>>());
 	}
-
+	
 	public void addToDeltas(int x, int y, int ID) {
 		for(String playerID: this.tileDeltas.keySet()) {
 			Vector<Integer> pos;
@@ -171,6 +231,9 @@ public class World {
 		return this.buildings;
 	}
 	
+	
+	
+	/*
 	public HashMap<Integer, Vector<Integer>> getTethers() {
 		return this.tethers;
 	}
@@ -204,6 +267,7 @@ public class World {
 		
 		tethers.put(tethers.size()-1, connectedIDs);
 	}
+	*/
 	
 	public int getTetherDist() {
 		return this.tetherDist;

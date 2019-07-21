@@ -26,6 +26,8 @@ public class GameLoop {
 			this.world.distributeResources();
 			time = System.currentTimeMillis();		
 		}
+		
+		this.world.update();
 	}
 	
 }

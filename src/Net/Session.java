@@ -87,7 +87,7 @@ public class Session implements Runnable {
 				
 				//Receive messages
 				while ((line = this.bufferedReader.readLine()) != null) {
-					System.out.println(line);
+					//System.out.println(line);
 					Request request = Request.parseString(line);
 					System.out.println(request.toString());
 					if(request.getMessage().equals("edit")) {
@@ -132,6 +132,10 @@ public class Session implements Runnable {
 						this.world.placeBuilding(request.getInt("buildID"), p.getWorldX()/32, p.getWorldY()/32);
 					} else if(request.getMessage().equals("link")) {
 						this.world.connectBuilding(request.getInt("x"), request.getInt("y"));
+					} else if(request.getMessage().equals("tether")) {
+						String id = request.getString("id");
+						Player p = this.world.getPlayer(id);
+						p.placeTether();
 					}
 				}
 				

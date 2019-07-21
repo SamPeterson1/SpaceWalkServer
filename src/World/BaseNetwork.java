@@ -1,21 +1,59 @@
 package World;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class BaseNetwork {
 	
 	ArrayList<Building> buildings;
-	ArrayList<Consumable> consumables;
+	HashMap<String, Consumable> consumables;
 	
 	public BaseNetwork() {
 		this.buildings = new ArrayList<Building>();
-		this.consumables = new ArrayList<Consumable>();
+		this.consumables = new HashMap<String, Consumable>();
 	}
 	
 	public void transferResources() {
-		for(Consumable c: this.consumables) {
+		for(Consumable c: this.consumables.values()) {
 			this.transferResource(c.getName());
 		}
+	}
+	
+	public int getTotal(String name) {
+		//System.out.println("yeeeeesm " + this.consumables.size());
+		int production = 0;
+		for(Building b: this.buildings) {
+			if(b.hasConsumable(name) && b.linked() && b.isActive()) {
+				production += b.getConsumable(name).getProduction();
+			}
+		}
+		
+		return production;
+	}
+	
+	public double[] closestPoint(int x, int y) {
+		double minDist = -1;
+		int minX = 0;
+		int minY = 0;
+		for(Building b: this.buildings) {
+			if(b.linked()) {
+				int dx = Math.abs(b.getX()*32 - x);
+				int dy = Math.abs(b.getY()*32 - y);
+				double dist = Math.sqrt(dx*dx + dy*dy);
+				if(dist < minDist || minDist == -1) {
+					minDist = dist;
+					minX = b.getX();
+					minY = b.getY();
+				}
+			}
+		}
+		
+		double[] retVal = {minX, minY, minDist};
+		return retVal;
+ 	}
+	
+	public HashMap<String, Consumable> getConsumables() {
+		return this.consumables;
 	}
 	
 	public void transferResource(String name) {
@@ -58,12 +96,14 @@ public class BaseNetwork {
 		}
 	}
 	
+	public ArrayList<Building> getBuildings() {
+		return this.buildings;
+	}
+	
 	public void addBuilding(Building b) {
 		this.buildings.add(b);
 		for(Consumable c: b.getConsumables()) {
-			if(!this.consumables.contains(c)) {
-				this.consumables.add(c);
-			}
+			this.consumables.putIfAbsent(c.getName(), c);
 		}
 	}
 	

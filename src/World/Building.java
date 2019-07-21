@@ -24,10 +24,14 @@ public class Building {
 		this.ID = ID;
 		this.connected = new ArrayList<Building>();
 		this.consumables = new HashMap<String, Consumable>();
-		this.active = false;
+		this.active = true;
 		this.linked = isHub;
 		this.width = width;
 		this.height = height;
+	}
+	
+	public boolean hasConsumable(String name) {
+		return this.consumables.containsKey(name);
 	}
 	
 	protected void addConsumable(Consumable c) {
@@ -35,10 +39,10 @@ public class Building {
 	}
 	
 	public void tick() {
-		System.out.println("I TIKEEE");
+		//System.out.println("I TIKEEE");
 		for(Consumable c: consumables.values()) {
 			this.active = c.tick() | c.getProduction() > 0;
-			System.out.println(this.active + " reeeeee");
+			//System.out.println(this.active + " reeeeee");
 		}
 	}
 	

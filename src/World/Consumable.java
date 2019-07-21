@@ -26,9 +26,13 @@ public class Consumable {
 		return this.c;
 	}
 	
+	public void setProduction(int production) {
+		this.production = production;
+	}
+	
 	public boolean tick() {
 		boolean retVal = (this.setAmount(this.production + this.amount) == 0);
-		System.out.println(this.production + " TIKEEEE" + retVal);
+		//System.out.println(this.production + " TIKEEEE" + retVal);
 		return retVal;
 	}
 	

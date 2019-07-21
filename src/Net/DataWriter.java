@@ -10,6 +10,8 @@ import World.Building;
 import World.BuildingFactory;
 import World.Consumable;
 import World.Player;
+import World.Tether;
+import World.TetherLine;
 import World.World;
 
 public class DataWriter {
@@ -34,12 +36,13 @@ public class DataWriter {
 		JSONArray playerIDs = new JSONArray();
 		for(String i: players.keySet()) {
 			playerIDs.put(i);
-			System.out.println("FOOT");
 			JSONArray loc = new JSONArray();
 			loc.put(0, players.get(i).getWorldX());
 			loc.put(1, players.get(i).getWorldY());
 			loc.put(2, players.get(i).getSprite());
 			loc.put(3, players.get(i).moveSpeed());
+			loc.put(4, players.get(i).getConnected().getX());
+			loc.put(5, players.get(i).getConnected().getY());
 			playerList.put(i.toString(), loc);
 		}
 		
@@ -102,12 +105,24 @@ public class DataWriter {
 			building.put("resources", names);
 			building.put("connectedNum", connectedNum);
 			data.put("Building " + buildingIDs[i], building);
-			
 		}
 		
 		
+		JSONObject tethers = new JSONObject();
+		for(TetherLine line: world.getTethers()) {
+			for(Tether t: line.getTethers()) {
+				JSONArray tether = new JSONArray();
+				tether.put(t.getX());
+				tether.put(t.getY());
+				tether.put(t.getState());
+				for(Tether t2: t.getConnected().values()) {
+					tether.put(t2.getID());
+				}
+				tethers.put(String.valueOf(t.getID()), tether);
+			}
+		}
 		
-		
+		data.put("tethers", tethers);
 		data.put("tiles", tiles);
 		data.put("players", playerList);
 		world.resetDeltas(id);
