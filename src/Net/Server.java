@@ -11,11 +11,13 @@ public class Server implements Runnable {
 	private Thread thread;
 	private World world;
 	private ArrayList<String> playerIDs;
+	private ArrayList<Session> sessions;
 
 	public Server() {
 		playerIDs = new ArrayList<String>();
 		this.world = World.grassWorld(256);
-		new Manager(world);
+		this.sessions = new ArrayList<Session>();
+		new Manager(world, this);
 		try {
 			this.thread = new Thread(this, "Server Thread");
 			this.serverSocket = new ServerSocket(7777);
@@ -25,11 +27,22 @@ public class Server implements Runnable {
 		}
 	}
 	
+	public void disconnect(Session session) {
+		this.sessions.remove(session);
+		System.out.println("Session Disconnected: " + session.getID());
+	}
+	
+	public void sendToAll() throws IOException{
+		for(Session s: this.sessions) {
+			s.sendData();
+		}
+	}
+	
 	@Override
 	public void run() {		
 			try {
 				while (true) {
-					new Session(this.serverSocket.accept(), world, playerIDs);
+					this.sessions.add(new Session(this.serverSocket.accept(), world, playerIDs, this));
 				}
 			} catch (IOException e) {
 				e.printStackTrace();

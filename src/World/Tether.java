@@ -7,6 +7,8 @@ public class Tether {
 
 	private static int id_counter;
 	public static int MAX_DIST = 160;
+	private static int O2_RATE = 4;
+	private static int POWER_RATE = 2;
 	
 	private int x;
 	private int y;
@@ -31,11 +33,11 @@ public class Tether {
 	}
 	
 	public void setOxygenRate(int rate) { 
-		this.oxygenRate = rate;
+		this.oxygenRate = rate > Tether.O2_RATE ? Tether.O2_RATE : rate;
 	}
 	
 	public void setPowerRate(int rate) {
-		this.powerRate = rate;
+		this.powerRate = rate > Tether.POWER_RATE ? Tether.POWER_RATE : rate;
 	}
 	
 	public int getOxygenRate() {

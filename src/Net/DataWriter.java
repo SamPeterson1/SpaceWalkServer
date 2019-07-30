@@ -6,10 +6,12 @@ import java.util.Vector;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import Items.Item;
 import World.Building;
 import World.BuildingFactory;
 import World.Consumable;
 import World.Player;
+import World.Refinery;
 import World.Tether;
 import World.TetherLine;
 import World.World;
@@ -25,9 +27,11 @@ public class DataWriter {
 		
 		HashMap<Integer, Vector<Integer>> deltas = world.getDeltas(id);
 		JSONArray ids = new JSONArray();
-		for(Integer i: deltas.keySet()) {
-			tiles.put(i.toString(), deltas.get(i));
-			ids.put(i.toString());
+		if(deltas != null) {
+			for(Integer i: deltas.keySet()) {
+				tiles.put(i.toString(), deltas.get(i));
+				ids.put(i.toString());
+			}
 		}
 		
 		tiles.put("ids", ids);
@@ -46,7 +50,30 @@ public class DataWriter {
 			playerList.put(i.toString(), loc);
 		}
 		
+		JSONArray vals = new JSONArray();
+		JSONArray name = new JSONArray();
+		JSONArray maximums = new JSONArray();
+		for(Consumable c: world.getPlayer(id).getConsumables()) {
+			vals.put(c.getAmount());
+			name.put(c.getName());
+			maximums.put(c.getMax());
+		}
+		
+		JSONArray bag = new JSONArray();
+		for(Item i: world.getPlayer(id).getBag()) {
+			bag.put(i.getID());
+		}
+		
+		for(int i = bag.length(); i < 8; i ++) {
+			bag.put(0);
+		}
+		
+		playerList.put("inBag", world.getPlayer(id).inBag());
+		playerList.put("bag", bag);
+		playerList.put("vals", vals);
+		playerList.put("names", name);
 		playerList.put("ids", playerIDs);
+		playerList.put("max", maximums);
 		
 		
 		ArrayList<Building> buildings = world.getBuildings();
@@ -122,9 +149,24 @@ public class DataWriter {
 			}
 		}
 		
+		JSONObject refineries = new JSONObject();
+		int index = 0;
+		for(Refinery r: world.getRefineries()) {
+			JSONArray dat = new JSONArray();
+			dat.put(r.getX());
+			dat.put(r.getY());
+			dat.put(r.getProducing());
+			dat.put(r.getRate());
+			dat.put(r.getPower());
+			dat.put(r.getItem().getID());
+			refineries.put(String.valueOf(index), dat);
+			index ++;
+		}
+		
 		data.put("tethers", tethers);
 		data.put("tiles", tiles);
 		data.put("players", playerList);
+		data.put("refineries", refineries);
 		world.resetDeltas(id);
 		System.out.println(data.toString());
 		return data.toString();

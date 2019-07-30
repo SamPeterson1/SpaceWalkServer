@@ -1,12 +1,12 @@
 package Resources;
 
-import Items.Wood;
+import Items.Log;
 import World.Resource;
 
 public class Tree extends Resource {
 
 	public Tree() {
-		super(new Wood(), 1);
+		super(new Log(), 1);
 	}
 	
 }

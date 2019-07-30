@@ -3,8 +3,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 
-import Buildings.Greenhouse;
-import Buildings.Hub;
+import Items.Log;
 
 public class World {
 	
@@ -15,6 +14,7 @@ public class World {
 	private int size;
 	private HashMap<String, HashMap<Integer, Vector<Integer>>> tileDeltas;
 	private HashMap<String, Player> players;
+	private HashMap<Vector<Integer>, Refinery> refineries;
 	//private HashMap<Integer, Vector<Integer>> tethers;
 	private ArrayList<TetherLine> tethers;
 	//0: nothing
@@ -52,6 +52,7 @@ public class World {
 	
 	public World(int[][] tiles, int[][] resources) {
 
+		this.refineries = new HashMap<Vector<Integer>, Refinery>();
 		this.tileDeltas = new HashMap<String, HashMap<Integer, Vector<Integer>>>();
 		this.players = new HashMap<String, Player>();
 		this.network = new BaseNetwork();
@@ -75,9 +76,32 @@ public class World {
 		
 	}
 	
+	public Refinery getRefinery(int x, int y) {
+		Vector<Integer> pos = new Vector<Integer>();
+		if(this.refineries.containsKey(pos)) {
+			return this.refineries.get(pos);
+		}
+		
+		return null;
+	}
+	
+	public ArrayList<Refinery> getRefineries() {
+		return this.network.getRefineries();
+	}
+	
+	public void addRefinery(int x, int y) {
+		Refinery r = new Refinery(x, y);
+		r.setItem(new Log());
+		this.network.addRefinery(r);
+		Vector<Integer> pos = new Vector<Integer>();
+		pos.add(x);
+		pos.add(y);
+		this.refineries.put(pos, r);
+	}
+	
 	public Tether nearestTether(int x, int y) {
 		double minDist = -1;
-		Tether retVal = null;
+		Tether retVal = new Tether(-1, -1);;
 		for(TetherLine line: this.tethers) {
 			for(Tether t: line.getTethers()) {
 				int dx = Math.abs(x - t.getX());

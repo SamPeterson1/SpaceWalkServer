@@ -8,18 +8,32 @@ public class Consumable {
 	int amount;
 	int production;
 	int max;
+	int consequense;
 	String name;
 	boolean tetherable;
 	Color c;
 	
-	public Consumable(int ID, Color c, String name, int production, int max, boolean tetherable) {
+	public Consumable(int ID, Color c, String name, int production, int max, int consequense, int val, boolean tetherable) {
 		this.ID = ID;
 		this.name = name;
 		this.tetherable = tetherable;
 		this.amount = 0;
 		this.production = production;
 		this.max = max;
+		this.consequense = consequense;
+		this.amount = val;
 		this.c = c;
+	}
+	
+	public int getHealthLoss() {
+		if(this.amount == 0) {
+			return this.consequense;
+		}
+		return 0;
+	}
+	
+	public void removeProduction(int production) {
+		this.production -= production;
 	}
 	
 	public Color getColor() {

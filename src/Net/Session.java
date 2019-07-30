@@ -19,8 +19,10 @@ public class Session implements Runnable {
 	private Socket socket;
 	private Thread thread;
 	private World world;
-
-	public Session(Socket socket, World world, ArrayList<String> playerIDs) {
+	private String id;
+	private Server server;
+	
+	public Session(Socket socket, World world, ArrayList<String> playerIDs, Server s) {
 		
 		try {
 			System.out.println("YEET");
@@ -35,8 +37,9 @@ public class Session implements Runnable {
 			bufferedWriter.newLine();
 			bufferedWriter.flush();
 			this.sendWorld();
+			this.id = playerID;
 			System.out.println(playerID);
-			
+			this.server = s;
 			this.thread.start();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -45,6 +48,13 @@ public class Session implements Runnable {
 	
 	private void sendWorld() throws IOException {
 		String data = this.getWorld();
+		bufferedWriter.write(data);
+		bufferedWriter.newLine();
+		bufferedWriter.flush();
+	}
+	
+	public void sendData() throws IOException {
+		String data = new DataWriter().write(world, this.id);
 		bufferedWriter.write(data);
 		bufferedWriter.newLine();
 		bufferedWriter.flush();
@@ -82,66 +92,90 @@ public class Session implements Runnable {
 	public void run() {
 		try {
 			String line;
-			
-			while(true) {
-				
-				//Receive messages
-				while ((line = this.bufferedReader.readLine()) != null) {
-					//System.out.println(line);
-					Request request = Request.parseString(line);
-					System.out.println(request.toString());
-					if(request.getMessage().equals("edit")) {
-						int x = request.getInt("x");
-						int y = request.getInt("y");
-						this.world.setID(x, y, request.getInt("id"));
+			//Receive messages
+			while ((line = this.bufferedReader.readLine()) != null) {
+				System.out.println("IM RUNNING YEET");
+				//System.out.println(line);
+				Request request = Request.parseString(line);
+				System.out.println(request.toString());
+				this.server.sendToAll();
+				if(request.getMessage().equals("edit")) {
+					int x = request.getInt("x");
+					int y = request.getInt("y");
+					this.world.setID(x, y, request.getInt("id"));
+				} else if(request.getMessage().equals("move")) {
+					String direction = request.getString("direction");
+					String id = request.getString("id");
+					Player p = this.world.getPlayer(id);
+					switch(direction) {
+					case "up":
+						p.up();
+						break;
+					case "down":
+						p.down();
+						break;
+					case "left":
+						p.left();
+						break;
+					case "right":
+						p.right();
+						break;
 					}
-					if(request.getMessage().equals("data")) {
-						String data = new DataWriter().write(world, request.getString("id"));
-						bufferedWriter.write(data);
-						bufferedWriter.newLine();
-						bufferedWriter.flush();
-					} else if(request.getMessage().equals("move")) {
-						String direction = request.getString("direction");
-						String id = request.getString("id");
-						Player p = this.world.getPlayer(id);
-						switch(direction) {
-						case "up":
-							p.up();
-							break;
-						case "down":
-							p.down();
-							break;
-						case "left":
-							p.left();
-							break;
-						case "right":
-							p.right();
-							break;
-						}
-					} else if(request.getMessage().equals("sprint")) {
-						String id = request.getString("id");
-						Player p = this.world.getPlayer(id);
-						p.toggleSprint();
-					} else if(request.getMessage().equals("halt")) {
-						String id = request.getString("id");
-						Player p = this.world.getPlayer(id);
-						p.setMovement(false);
-					} else if(request.getMessage().equals("build")) {
-						String id = request.getString("playerID");
-						Player p = this.world.getPlayer(id);
-						this.world.placeBuilding(request.getInt("buildID"), p.getWorldX()/32, p.getWorldY()/32);
-					} else if(request.getMessage().equals("link")) {
-						this.world.connectBuilding(request.getInt("x"), request.getInt("y"));
-					} else if(request.getMessage().equals("tether")) {
-						String id = request.getString("id");
-						Player p = this.world.getPlayer(id);
-						p.placeTether();
-					}
+				} else if(request.getMessage().equals("sprint")) {
+					String id = request.getString("id");
+					Player p = this.world.getPlayer(id);
+					p.toggleSprint();
+				} else if(request.getMessage().equals("halt")) {
+					String id = request.getString("id");
+					Player p = this.world.getPlayer(id);
+					p.setMovement(false);
+				} else if(request.getMessage().equals("build")) {
+					String id = request.getString("id");
+					Player p = this.world.getPlayer(id);
+					this.world.placeBuilding(request.getInt("buildID"), p.getWorldX()/32, p.getWorldY()/32);
+				} else if(request.getMessage().equals("link")) {
+					this.world.connectBuilding(request.getInt("x"), request.getInt("y"));
+				} else if(request.getMessage().equals("tether")) {
+					String id = request.getString("id");
+					Player p = this.world.getPlayer(id);
+					p.placeTether();
+				} else if(request.getMessage().equals("refinery")) {
+					String id = request.getString("id");
+					Player p = this.world.getPlayer(id);
+					p.placeRefinery();
+				} else if(request.getMessage().equals("toggleBag")) {
+					String id = request.getString("id");
+					Player p = this.world.getPlayer(id);
+					p.toggleBag();
+				} else if(request.getMessage().equals("harvest")) {
+					String id = request.getString("id");
+					Player p = this.world.getPlayer(id);
+					p.harvestResource();
+				} else if(request.getMessage().equals("tileSelect")) {
+					String id = request.getString("id");
+					Player p = this.world.getPlayer(id);
+					p.select(request.getInt("x"), request.getInt("y"));
+				} else if(request.getMessage().equals("equip")) {
+					String id = request.getString("id");
+					Player p = this.world.getPlayer(id);
+					p.moveToHand(request.getInt("slot"));
 				}
-				
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				this.bufferedReader.close();
+				this.bufferedWriter.close();
+				this.server.disconnect(this);
+				this.socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
+	}
+	
+	public String getID() {
+		return this.id;
 	}
 }

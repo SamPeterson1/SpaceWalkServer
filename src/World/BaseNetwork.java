@@ -1,21 +1,21 @@
 package World;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class BaseNetwork {
 	
 	ArrayList<Building> buildings;
-	HashMap<String, Consumable> consumables;
+	String[] consumables = {"Oxygen", "Power", "Wood"};
+	ArrayList<Refinery> refineries; 
 	
 	public BaseNetwork() {
 		this.buildings = new ArrayList<Building>();
-		this.consumables = new HashMap<String, Consumable>();
+		this.refineries = new ArrayList<Refinery>();
 	}
 	
 	public void transferResources() {
-		for(Consumable c: this.consumables.values()) {
-			this.transferResource(c.getName());
+		for(String name: consumables) {
+			this.transferResource(name);
 		}
 	}
 	
@@ -52,59 +52,80 @@ public class BaseNetwork {
 		return retVal;
  	}
 	
-	public HashMap<String, Consumable> getConsumables() {
-		return this.consumables;
-	}
-	
 	public void transferResource(String name) {
 		int surplus = 0;
 		float leftOver = 0;
 		float totalGiven = 0;
 		int sumConsumption = 0;
 		int numNonConsuming = 0;
+		int refinerySurplus = 0;
 		for(Building b: this.buildings) {
-			Consumable c = b.getConsumable(name);
-			if(b.linked()) {
-				if(c.getProduction() >= 0) {
-					surplus += c.getAmount();
-					numNonConsuming ++;
-				} else {
-					sumConsumption -= c.getProduction();
+			if(b.hasConsumable(name)) {
+				Consumable c = b.getConsumable(name);
+				if(b.linked()) {
+					if(c.getProduction() >= 0) {
+						surplus += c.getAmount();
+						numNonConsuming ++;
+					} else {
+						sumConsumption -= c.getProduction();
+					}
+				}
+			}
+		}
+		
+		for(Refinery r: this.refineries) {
+			if(r.getProducing().equals(name)) {
+				r.tick();
+				sumConsumption -= r.getRate();
+				refinerySurplus += r.getRate();
+			}
+		}
+		
+		boolean distributed = false;
+		for(Building b: this.buildings) {
+			if(b.hasConsumable(name)) {
+				Consumable c = b.getConsumable(name);
+				if(c.getProduction() < 0) {
+					distributed = true;
+					b.updateActive(c);
+					int consumption = -(c.getProduction());
+					float given = surplus*consumption/sumConsumption;
+					float capped = given;
+					if(capped > 5) capped = 5;
+					totalGiven += capped;
+					leftOver += c.addAmount((int)capped);
 				}
 			}
 		}
 		
 		for(Building b: this.buildings) {
-			Consumable c = b.getConsumable(name);
-			if(c.getProduction() < 0) {
-				b.updateActive(c);
-				int consumption = -(c.getProduction());
-				float given = surplus*consumption/sumConsumption;
-				float capped = given;
-				if(capped > 5) capped = 5;
-				totalGiven += capped;
-				leftOver += c.addAmount((int)capped);
+			if(b.hasConsumable(name)) {
+				Consumable c = b.getConsumable(name);
+				if(c.getProduction() >= 0) {
+					float blah = leftOver-totalGiven;
+					if(!distributed) blah = refinerySurplus;
+					System.out.println(distributed + " " + blah);
+					c.addAmount((int) (blah/numNonConsuming));
+					b.updateActive(c);
+				}
 			}
 		}
-		
-		for(Building b: this.buildings) {
-			Consumable c = b.getConsumable(name);
-			if(c.getProduction() >= 0) {
-				c.addAmount((int) ((leftOver-totalGiven)/numNonConsuming));
-				b.updateActive(c);
-			}
-		}
+	}
+	
+	public ArrayList<Refinery> getRefineries() {
+		return this.refineries;
 	}
 	
 	public ArrayList<Building> getBuildings() {
 		return this.buildings;
 	}
 	
+	public void addRefinery(Refinery r) {
+		this.refineries.add(r);
+	}
+	
 	public void addBuilding(Building b) {
 		this.buildings.add(b);
-		for(Consumable c: b.getConsumables()) {
-			this.consumables.putIfAbsent(c.getName(), c);
-		}
 	}
 	
 }

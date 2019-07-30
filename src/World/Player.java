@@ -1,11 +1,14 @@
 package World;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
+import Consumables.Health;
 import Consumables.Oxygen;
 import Consumables.Power;
 import Items.Item;
+import Items.Log;
 
 public class Player {
 	
@@ -13,6 +16,12 @@ public class Player {
 	public static final int NORTH = 1;
 	public static final int SOUTH = 3;
 	public static final int WEST = 4;
+	private static int O2_RATE = -2;
+	private static int POWER_RATE = -1;
+	private static int HEALTH_REGEN = 2;
+	private static int O2_MAX = 200;
+	private static int POW_MAX = 100;
+	private static int HEALTH_MAX = 100;
 	
 	private ArrayList<Item> bag;
 	private HashMap<String, Consumable> supplies;
@@ -39,14 +48,38 @@ public class Player {
 	public Player(World world) {
 		this.world = world;
 		this.supplies = new HashMap<String, Consumable>();
-		this.supplies.put("Oxygen", new Oxygen(0));
-		this.supplies.put("Power", new Power(0));
+		this.supplies.put("Oxygen", new Oxygen(0, Player.O2_MAX));
+		this.supplies.put("Power", new Power(0, Player.POW_MAX));
+		this.supplies.put("Health", new Health(Player.HEALTH_REGEN, Player.HEALTH_MAX));
+		this.connected = world.nearestTether(this.worldX, this.worldY);
+		this.bag = new ArrayList<Item>();
+		this.bag.add(new Log());
+	}
+	
+	public Collection<Consumable> getConsumables() {
+		return this.supplies.values();
+	}
+	
+	public void update() {
+		boolean supported = this.connected.getX() != -1;
+		Consumable hp = this.supplies.get("Health");
+		hp.setProduction(Player.HEALTH_REGEN);
+		for(Consumable c: this.supplies.values()) {
+			if(c.getName() == "Oxygen")
+				c.setProduction((supported?this.connected.getOxygenRate():0) + Player.O2_RATE);
+			if(c.getName() == "Power")
+				c.setProduction((supported?this.connected.getPowerRate():0) + Player.POWER_RATE);
+			hp.removeProduction(c.getHealthLoss());
+			c.tick();
+		} 
+	}	
+	
+	public void placeRefinery() {
+		this.world.addRefinery(this.worldX/32, this.worldY/32);
 	}
 	
 	public Tether getConnected() {
-		if(this.connected != null)
-			return this.connected;
-		return new Tether(-1, -1);
+		return this.connected;
 	}
 	
 	public void down() {
@@ -59,6 +92,10 @@ public class Player {
 	
 	public ArrayList<Item> getBag() {
 		return this.bag;
+	}
+	
+	public boolean inBag() {
+		return this.inBag;
 	}
 	
 	public void closeBag() {
@@ -101,15 +138,18 @@ public class Player {
 		}
 	}
 	
-	
-	public void moveToHand(Item i) {
-		if(hand == null) {
-			bag.remove(i);
-			hand = i;
-		} else {
-			bag.remove(i);
-			bag.add(hand);
-			hand = i;
+	public void moveToHand(int slot) {
+		if(this.bag.get(slot).getID() != 0) {
+			if(this.hand != null) {
+				Item hand = this.hand;
+				Item inBag = this.bag.get(slot);
+				this.bag.remove(inBag);
+				this.bag.add(hand);
+				this.hand = inBag;
+			} else {
+				this.hand = this.bag.get(slot);
+				this.bag.remove(this.hand);
+			}
 		}
 	}
 	
