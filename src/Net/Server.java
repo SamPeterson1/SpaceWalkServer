@@ -32,6 +32,14 @@ public class Server implements Runnable {
 		System.out.println("Session Disconnected: " + session.getID());
 	}
 	
+	public void forward(String message, Session sender) {
+		for(Session s: this.sessions) {
+			if(!s.equals(sender)) {
+				s.send(message);
+			}
+		}
+	}
+	
 	public void sendToAll() throws IOException{
 		for(Session s: this.sessions) {
 			s.sendData();

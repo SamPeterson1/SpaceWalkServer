@@ -38,6 +38,7 @@ public class Session implements Runnable {
 			bufferedWriter.flush();
 			this.sendWorld();
 			this.id = playerID;
+			this.sendData();
 			System.out.println(playerID);
 			this.server = s;
 			this.thread.start();
@@ -94,6 +95,7 @@ public class Session implements Runnable {
 			String line;
 			//Receive messages
 			while ((line = this.bufferedReader.readLine()) != null) {
+				this.server.forward(line, this);
 				System.out.println("IM RUNNING YEET");
 				//System.out.println(line);
 				Request request = Request.parseString(line);
@@ -134,7 +136,7 @@ public class Session implements Runnable {
 					Player p = this.world.getPlayer(id);
 					this.world.placeBuilding(request.getInt("buildID"), p.getWorldX()/32, p.getWorldY()/32);
 				} else if(request.getMessage().equals("link")) {
-					this.world.connectBuilding(request.getInt("x"), request.getInt("y"));
+					this.world.connectBuildings(request.getInt("x1"), request.getInt("y1"), request.getInt("x2"), request.getInt("y2"));
 				} else if(request.getMessage().equals("tether")) {
 					String id = request.getString("id");
 					Player p = this.world.getPlayer(id);
@@ -172,6 +174,16 @@ public class Session implements Runnable {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	public void send(String message) {
+		try {
+			this.bufferedWriter.write(message);
+			this.bufferedWriter.newLine();
+			this.bufferedWriter.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	

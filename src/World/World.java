@@ -147,6 +147,15 @@ public class World {
 		}
 	}
 	
+	public void connectBuildings(int x1, int y1, int x2, int y2) {
+		Building b1 = this.getBuiding(x1, y1);
+		Building b2 = this.getBuiding(x2, y2);
+		
+		b1.connectTo(b2);
+		b2.connectTo(b1);
+	}
+	
+	/*
 	public void connectBuilding(int x, int y) {
 		if(this.buildingExsits(x, y)) {
 			if(!((this.connectIndex == 1) && (this.connect[0].equals(this.getBuiding(x, y))))) {
@@ -166,6 +175,7 @@ public class World {
 			line.updateLinked();
 		}
 	}
+	*/
 	
 	public ArrayList<TetherLine> getTethers() {
 		return this.tethers;
